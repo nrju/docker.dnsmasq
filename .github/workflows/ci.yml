@@ -1,9 +1,5 @@
 name: CI
 
-env:
-  DOCKER_NAME: "dnsmasq"
-  DOCKER_TAG: "2.92.0"
-
 on:
   workflow_dispatch:
 
@@ -24,28 +20,10 @@ permissions:
   packages: write
 
 jobs:
-  build-and-push:
-    name: Build and push the docker image
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-
-      - name: Build docker image
-        run: docker build . --tag $DOCKER_NAME
-
-      - name: Login to registry
-        run: echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-        env:
-          GITHUB_ACTOR: ${{github.actor}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
-      - name: Push docker image
-        if: github.event_name == 'release'
-        run: |
-          docker tag $DOCKER_NAME $DOCKER_REPO:$DOCKER_TAG
-          docker tag $DOCKER_NAME $DOCKER_REPO:latest
-          docker push --all-tags $DOCKER_REPO
-        env:
-          DOCKER_REPO: ghcr.io/${{github.repository_owner}}/${{env.DOCKER_NAME}}
+  call-docker-workflow:
+    name: Call docker workflow
+    uses: nrju/docker/.github/workflows/ci.yml@v1.0.0
+    with:
+      DOCKER_NAME: "dnsmasq"
+      DOCKER_TAG: "2.92.1"
+      PUBLISH: ${{ github.event_name == 'release' }}
